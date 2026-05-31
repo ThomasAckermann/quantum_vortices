@@ -1,0 +1,211 @@
+
+% ============================================================
+%  Seminar Paper Template — Topic 12
+%  Numerical Simulation of Quantized Vortices with Small Core Size
+%  Master-Seminar: Complex Quantum Systems and Vortex Dynamics
+%  KIT — Fakultät für Mathematik, Sommersemester 2026
+% ============================================================
+\documentclass[12pt, a4paper]{article}
+
+% ------------------------------------------------------------
+%  Packages
+% ------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+
+% Math
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathtools}
+
+% Layout
+\usepackage[
+  top=2.5cm,
+  bottom=2.5cm,
+  left=2.8cm,
+  right=2.8cm
+]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+% Graphics & floats
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+
+% References & links
+\usepackage[
+  backend=biber,
+  style=alphabetic,
+  sorting=nyt
+]{biblatex}
+\addbibresource{references.bib}   % <-- create this file with your .bib entries
+\usepackage[
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=blue,
+  urlcolor=blue
+]{hyperref}
+
+% Miscellaneous
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{booktabs}
+
+% ------------------------------------------------------------
+%  Theorem environments
+% ------------------------------------------------------------
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{remark}[theorem]{Remark}
+
+% ------------------------------------------------------------
+%  Custom commands — add your own as needed
+% ------------------------------------------------------------
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\N}{\mathbb{N}}
+%\newcommand{\i}{\text{i}}
+\newcommand{\Eeps}{E_\varepsilon}
+\newcommand{\psieps}{\psi_\varepsilon}
+\newcommand{\ustar}{u^*}
+\newcommand{\psistar}{\psi^*_\varepsilon}
+\newcommand{\Wren}{W}
+\newcommand{\Jac}{J\psi}
+\newcommand{\sj}{j(\psi)}
+\newcommand{\Lap}{\Delta}
+\newcommand{\dd}{\,\mathrm{d}}
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}
+\newcommand{\inner}[2]{\left\langle #1,\, #2 \right\rangle}
+
+% Shorthand for the symplectic matrix
+\newcommand{\symp}{J_{\mathrm{symp}}}
+
+% ------------------------------------------------------------
+%  Title information
+% ------------------------------------------------------------
+\title{
+  \Large\textbf{Numerical Simulation of Quantized Vortices\\
+  with Small Core Size via Vortex Tracking}\\[0.5em]
+  \large Master-Seminar: Complex Quantum Systems and Vortex Dynamics\\
+  KIT --- Fakultät für Mathematik, Sommersemester 2026
+}
+\author{Thomas TODO-LASTNAME}   % <-- fill in your name
+\date{\today}
+
+% ============================================================
+\begin{document}
+% ============================================================
+
+\maketitle
+\thispagestyle{empty}
+
+\section{Introduction}
+
+Ginzburg-Landau Hamiltonian:
+\begin{align}
+    E_\varepsilon (u) = \int_\Omega \frac{1}{2} |\nabla u|^2 + \frac{1}{4 \varepsilon^2} (1- |u|^2)^2
+\end{align}
+
+When investigating this variational model and minimizes with the singular limit $\varepsilon \to 0$.
+
+The corresponding Schrödinger flow $i \partial_t \psi = - \nabla_{L^2} E_\varepsilon (\psi)$
+On smooth bounded domain with Neumann boundary conditions one arrives at:
+\begin{align}
+  i \partial_t \psi_\varepsilon = \Delta \psieps (x,t) + \frac{1}{\varepsilon^2} (1- |\psieps (x,t)|^2) \psieps(x,t)
+\end{align}
+
+Observables:
+\begin{itemize}
+  \item $|\psi|^2$
+  \item Supercurrents $j(\psi) = \frac{1}{2i}(\overline{psi} \nabla - \psi \nabla \overline{\psi})$
+  \item Vorticity: $J \psi = \frac{1}{2} \nabla \times j(\psi)$
+\end{itemize}
+
+For vortices:
+$J \psieps (t) \to \pi \sum^N_{j=1} d_j \delta_{a_j (t)}$
+The singular points solve:
+\begin{align}
+  \dot c_j (t) = - \frac{1}{\pi} d_j J \nabla_{a_j} W(a(t), d) \\
+  a_j(0) = a^0_j
+\end{align}
+
+The renormalized energy:
+\begin{align}
+  W(a,d) =  - \pi \sum_{1 \leq i \neq j \leq N} d_i d_j \log |a_i - a_j| + \text{boundary terms}
+\end{align}
+
+We introduce the harmonic map $u^* (a,d) \in W^{1,p}(\Omega , \mathbb S^{-1})$
+
+The following conditions uniquely determine the supercurrents $j(u^*)$ which in turn determine $u^*$
+\begin{align}
+  \nabla j(u^*) =0\\
+  \nabla \times j(^*) = 2\pi \sum^N_{j=1} d_j \delta_{a_j} \\
+  \nu j(u^*) =0 \text{ on } \partial \Omega
+\end{align}
+Where $\nu$ is the direction of the outward normal of $\partial \Omega$
+$u^*$ is then given by
+\begin{align}
+  u^* (x; a,d) = \exp{i H(x)} \prod^N_{j=1} \frac{x-a_j}{|x-a_j|}^{d_j}
+\end{align}
+
+Where $H:\R^2 \to \R^2$ is some harmonic function.
+
+Boundary terms in the renormalized energy $R(x; a,d)$ which solves
+\begin{align}
+  \Delta R = 0 \text{, in \Omega} \\
+  R = - \sum^N_{j=1} d_j \log |x-a_j| \text{, on } \partial \Omega
+\end{align}
+
+
+Definition Well preparedness
+
+
+\section{Method}
+\subsection{Motivation}
+Why not just solve the PDE directly?
+\begin{itemize}
+  \item The standard approach: time-splittinng + Fourier /FEM in space
+  \item The core problem: resolving the vortex of size $\varepsilon$ requires mesh size $h<\varepsilon$
+  \item Adaptive FEM helps, but still expensive, the method in this paper shifts the bottleneck entirely
+\end{itemize}
+
+
+
+\subsection{Algorithm}
+
+Step 1: Solve $1D$ ODE for $f_varepsilon$ compute initial phase $H$
+Step 2: Evolve vortex positions via Hamiltonian ODE (RK4, $\delta t = 10^{-3}$)
+Step 3: The radial prodfile $f_\varepsilon$ solved once, scales with $r_0/\varepsilon$
+
+Key insight: $\epsilon$ only enters through the 1D preprocessing - it is no longer a discretization bottleneck
+
+\subsection
+
+\section{Error Analysis}
+
+\begin{lemma}
+  
+\end{lemma}
+
+
+
+
+
+
+% ============================================================
+%  Bibliography
+% ============================================================
+\newpage
+\printbibliography
