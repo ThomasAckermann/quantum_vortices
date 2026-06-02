@@ -1,31 +1,16 @@
-
-% ============================================================
-%  Seminar Paper Template — Topic 12
-%  Numerical Simulation of Quantized Vortices with Small Core Size
-%  Master-Seminar: Complex Quantum Systems and Vortex Dynamics
-%  KIT — Fakultät für Mathematik, Sommersemester 2026
-% ============================================================
 \documentclass[12pt, a4paper]{article}
-
-% ------------------------------------------------------------
-%  Packages
-% ------------------------------------------------------------
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[english]{babel}
-
-% Math
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsthm}
 \usepackage{mathtools}
-
-% Layout
 \usepackage[
-  top=2.5cm,
-  bottom=2.5cm,
-  left=2.8cm,
-  right=2.8cm
+  top=2cm,
+  bottom=2cm,
+  left=2cm,
+  right=2cm
 ]{geometry}
 \usepackage{setspace}
 \onehalfspacing
@@ -36,13 +21,15 @@
 \usepackage{caption}
 \usepackage{subcaption}
 
+\setlength{\parindent}{0pt}
+
 % References & links
 \usepackage[
   backend=biber,
   style=alphabetic,
   sorting=nyt
 ]{biblatex}
-\addbibresource{references.bib}   % <-- create this file with your .bib entries
+\addbibresource{references.bib}
 \usepackage[
   colorlinks=true,
   linkcolor=black,
@@ -55,9 +42,6 @@
 \usepackage{enumitem}
 \usepackage{booktabs}
 
-% ------------------------------------------------------------
-%  Theorem environments
-% ------------------------------------------------------------
 \theoremstyle{plain}
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{lemma}[theorem]{Lemma}
@@ -69,9 +53,6 @@
 \newtheorem{example}[theorem]{Example}
 \newtheorem{remark}[theorem]{Remark}
 
-% ------------------------------------------------------------
-%  Custom commands — add your own as needed
-% ------------------------------------------------------------
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\C}{\mathbb{C}}
 \newcommand{\N}{\mathbb{N}}
@@ -92,21 +73,16 @@
 % Shorthand for the symplectic matrix
 \newcommand{\symp}{J_{\mathrm{symp}}}
 
-% ------------------------------------------------------------
-%  Title information
-% ------------------------------------------------------------
 \title{
   \Large\textbf{Numerical Simulation of Quantized Vortices\\
   with Small Core Size via Vortex Tracking}\\[0.5em]
-  \large Master-Seminar: Complex Quantum Systems and Vortex Dynamics\\
+  \large Complex Quantum Systems and Vortex Dynamics\\
   KIT --- Fakultät für Mathematik, Sommersemester 2026
 }
-\author{Thomas TODO-LASTNAME}   % <-- fill in your name
+\author{Thomas Ackermann}
 \date{\today}
 
-% ============================================================
 \begin{document}
-% ============================================================
 
 \maketitle
 \thispagestyle{empty}
@@ -118,18 +94,15 @@ Ginzburg-Landau Hamiltonian:
     E_\varepsilon (u) = \int_\Omega \frac{1}{2} |\nabla u|^2 + \frac{1}{4 \varepsilon^2} (1- |u|^2)^2
 \end{align}
 
-When investigating this variational model and minimizes with the singular limit $\varepsilon \to 0$.
-
-The corresponding Schrödinger flow $i \partial_t \psi = - \nabla_{L^2} E_\varepsilon (\psi)$
-On smooth bounded domain with Neumann boundary conditions one arrives at:
+The corresponding Schrödinger flow $i \partial_t \psi = - \nabla_{L^2} E_\varepsilon (\psi)$.
+On a smooth bounded domain with Neumann boundary conditions one arrives at:
 \begin{align}
   i \partial_t \psi_\varepsilon = \Delta \psieps (x,t) + \frac{1}{\varepsilon^2} (1- |\psieps (x,t)|^2) \psieps(x,t)
 \end{align}
 
-Observables:
+Important Quantities:
 \begin{itemize}
-  \item $|\psi|^2$
-  \item Supercurrents $j(\psi) = \frac{1}{2i}(\overline{psi} \nabla - \psi \nabla \overline{\psi})$
+  \item Supercurrents $j(\psi) = \frac{1}{2i}(\overline{\psi} \nabla - \psi \nabla \overline{\psi})$
   \item Vorticity: $J \psi = \frac{1}{2} \nabla \times j(\psi)$
 \end{itemize}
 
@@ -137,12 +110,12 @@ For vortices:
 $J \psieps (t) \to \pi \sum^N_{j=1} d_j \delta_{a_j (t)}$
 The singular points solve:
 \begin{align}
-  \dot c_j (t) = - \frac{1}{\pi} d_j J \nabla_{a_j} W(a(t), d) \\
-  a_j(0) = a^0_j
+  &\dot a_j (t) = - \frac{1}{\pi} d_j J \nabla_{a_j} W(a(t), d) \\
+  &a_j(0) = a^0_j
 \end{align}
 
 
-We introduce the harmonic map $u^* (a,d) \in W^{1,p}(\Omega , \mathbb S^{-1})$.
+We introduce the harmonic map $u^* (a,d) \in W^{1,p}(\Omega , \mathbb S^{-1})$. 
 What is it?
 Given vortex positions $a$ and degrees $d$ we want a map $u^*: \Omega \to \C$ that:
 \begin{itemize}
@@ -153,39 +126,37 @@ Given vortex positions $a$ and degrees $d$ we want a map $u^*: \Omega \to \C$ th
 
 The following conditions uniquely determine the supercurrents $j(u^*)$ which in turn determine $u^*$
 \begin{align}
-  \nabla j(u^*) =0\\
-  \nabla \times j(^*) = 2\pi \sum^N_{j=1} d_j \delta_{a_j} \\
-  \nu j(u^*) =0 \text{ on } \partial \Omega
+  &\nabla j(u^*) =0\\
+  &\nabla \times j(u^*) = 2\pi \sum^N_{j=1} d_j \delta_{a_j} \\
+  &\nu j(u^*) =0 \text{ on } \partial \Omega
 \end{align}
-Where $\nu$ is the direction of the outward normal of $\partial \Omega$
+Where $\nu$ is the direction of the outward normal of $\partial \Omega$. 
 $u^*$ is then given by
 \begin{align}
-  u^* (x; a,d) = \exp{i H(x)} \prod^N_{j=1} \frac{x-a_j}{|x-a_j|}^{d_j}
+  u^* (x; a,d) = \exp (i H(x)) \prod^N_{j=1} \frac{x-a_j}{|x-a_j|}^{d_j}
 \end{align}
 
-Where $H:\R^2 \to \R^2$ is some harmonic function.
+Where $H:\R^2 \to \R$ is some harmonic function.
 
 Boundary terms in the renormalized energy $R(x; a,d)$ which solves
 \begin{align}
-  \Delta R = 0 \text{, in \Omega} \\
-  R = - \sum^N_{j=1} d_j \log |x-a_j| \text{, on } \partial \Omega
+  &\Delta R = 0 \text{, in } \Omega \\
+  &R = - \sum^N_{j=1} d_j \log |x-a_j| \text{, on } \partial \Omega
 \end{align}
 
 The supercurrents of $u^*$ satisfies:
 \begin{align}
   j(u^*) = - \nabla \times G, \quad G(x) = \sum_j d_j \log |x-a_j| + R(x; a,d) 
 \end{align}
-This equation is important to compute the gradient of $W$
+This equation is important to compute the gradient of $W$. 
 $u^*$ has singularities at the vortex locations $a_j$. This is the reason we need to smooth it out before using it as an initial condition for the PDE.
-
-
 
 The renormalized energy:
 Why do we need it?
 The Ginzburg-Landau energy diverges as $\varepsilon \to 0$. This divergence comes purely from the self-energy of each vortex core and carries no information about vortex interactions.
 The renormalized energy is what remains after subtracting the divergence:
 \begin{align}
-  W(a,d) =  - \pi \sum_{1 \leq i \neq j \leq N} d_i d_j \log |a_i - a_j - \pi \sum_j d_j R(a_j ; a, d)
+  W(a,d) =  - \pi \sum_{1 \leq i \neq j \leq N} d_i d_j \log |a_i - a_j| - \pi \sum_j d_j R(a_j ; a, d)
 \end{align}
 The first terms captures vortex-vortex interaction: same sign vortices repel, oppositve sign attract
 The second sum captures vortex-boundary interaction through R, the harmonic correction that enforces the Neumann boundary condition
@@ -220,16 +191,14 @@ Why not just solve the PDE directly?
 \end{itemize}
 
 
-
 \subsection{Algorithm}
 
-Step 1: Solve $1D$ ODE for $f_varepsilon$ compute initial phase $H$
-Step 2: Evolve vortex positions via Hamiltonian ODE (RK4, $\delta t = 10^{-3}$)
-Step 3: The radial prodfile $f_\varepsilon$ solved once, scales with $r_0/\varepsilon$
+Step 1: Solve $1D$ ODE for $f_\varepsilon$ compute initial phase $H$ \\
+Step 2: Evolve vortex positions via Hamiltonian ODE (RK4, $\delta t = 10^{-3}$) \\
+Step 3: The radial prodfile $f_\varepsilon$ solved once, scales with $r_0/\varepsilon$ \\
 
 Key insight: $\epsilon$ only enters through the 1D preprocessing - it is no longer a discretization bottleneck
 
-\subsection
 
 \section{Error Analysis}
 
@@ -249,10 +218,11 @@ Key insight: $\epsilon$ only enters through the 1D preprocessing - it is no long
 In order to prove this we need 2 other lemmas 
 
 \begin{lemma}
-  Let $b^0, a^0 \in \Omega^{*N}$, for fixed $d \in \{\pm1\}^N$ and let $\rho(a) := \min_{j\neq l} \{\text{dist}(a_j, \partial\Omega) , |a_j - a_l|\}$.
+  Let $b^0, a^0 \in \Omega^{*N}$, for fixed $d \in \{\pm1\}^N$
+  and let $\rho(a) := \min_{j\neq l} \{\text{dist}(a_j, \partial\Omega) , |a_j - a_l|\}$.
   Suppose that $\rho_T:= \text{inf}_{t\in [0,T]} \leq 0$
   \begin{align}
-  |a(t) - b(t)| \leq  C (|a^0-b^0| + \frac{\text{sup}_{s\in [0,T]}||\mathbb{P}^\vert_n g_{a(s)}||_{L^2(\partial \Omega)}}{\rho^{3/2}_T})\exp{C t /\rho^{5/2}_T}
+  |a(t) - b(t)| \leq  C (|a^0-b^0| + \frac{\text{sup}_{s\in [0,T]}||\mathbb{P}^\perp_n g_{a(s)}||_{L^2(\partial \Omega)}}{\rho^{3/2}_T})\exp{C t /\rho^{5/2}_T}
   \end{align}
   Where $g_a(x) = - \sum^N_j d_j \log |x-a_j|$
 \end{lemma} 
@@ -277,8 +247,5 @@ the following in time error holds:
 \end{align}
 \end{lemma}
 
-% ============================================================
-%  Bibliography
-% ============================================================
 \newpage
 \printbibliography

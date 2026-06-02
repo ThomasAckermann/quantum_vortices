@@ -1,0 +1,680 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage[
+  top=2cm,
+  bottom=2cm,
+  left=2cm,
+  right=2cm
+]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+% Graphics & floats
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\setlength{\parindent}{0pt}
+
+% References & links
+\usepackage[
+  backend=biber,
+  style=alphabetic,
+  sorting=nyt
+]{biblatex}
+\addbibresource{references.bib}
+\usepackage[
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=blue,
+  urlcolor=blue
+]{hyperref}
+
+% Miscellaneous
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{booktabs}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Eeps}{E_\varepsilon}
+\newcommand{\psieps}{\psi_\varepsilon}
+\newcommand{\ustar}{u^*}
+\newcommand{\psistar}{\psi^*_\varepsilon}
+\newcommand{\Wren}{W}
+\newcommand{\Jac}{J\psi}
+\newcommand{\sj}{j(\psi)}
+\newcommand{\Lap}{\Delta}
+\newcommand{\dd}{\,\mathrm{d}}
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}
+\newcommand{\inner}[2]{\left\langle #1,\, #2 \right\rangle}
+\newcommand{\symp}{J_{\mathrm{symp}}}
+
+\title{
+  \Large\textbf{Numerical Simulation of Quantized Vortices\\
+  with Small Core Size via Vortex Tracking}\\[0.5em]
+  \large Complex Quantum Systems and Vortex Dynamics\\
+  KIT --- Fakult\"{a}t f\"{u}r Mathematik, Sommersemester 2026
+}
+\author{Thomas Ackermann}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+% ============================================================
+\section{Introduction}
+% ============================================================
+
+\subsection{The Gross--Pitaevskii equation}
+
+Gross--Pitaevskii (GP) equations are nonlinear Schr\"{o}dinger equations
+that arise in the modelling of quantum many-body systems, most prominently
+in Bose--Einstein condensation and superconductivity.
+A prototypical form is derived from the \emph{Ginzburg--Landau energy}
+\begin{align}
+    E_\varepsilon(u)
+    = \int_\Omega \frac{1}{2}\abs{\nabla u}^2
+      + \frac{1}{4\varepsilon^2}(1 - \abs{u}^2)^2 \dd x,
+    \label{eq:GL-energy}
+\end{align}
+defined on a simply connected, smoothly bounded domain $\Omega \subset \R^2$.
+The parameter $\varepsilon > 0$ controls the \emph{vortex core size}:
+smaller $\varepsilon$ means sharper, more localised vortices.
+
+The corresponding Schr\"{o}dinger flow
+$\mathrm{i}\,\partial_t\psi = -\nabla_{L^2} E_\varepsilon(\psi)$
+on $\Omega$ with homogeneous Neumann boundary conditions reads
+\begin{align}
+  \mathrm{i}\,\partial_t \psieps
+  = \Delta \psieps(x,t)
+    + \frac{1}{\varepsilon^2}\bigl(1 - \abs{\psieps(x,t)}^2\bigr)\psieps(x,t),
+  \qquad x \in \Omega,\; t \geq 0.
+  \label{eq:GP}
+\end{align}
+This equation is globally well-posed for every $\varepsilon > 0$ and
+preserves the energy: $E_\varepsilon(\psieps(t)) = E_\varepsilon(\psieps(0))$ for all $t \geq 0$.
+
+\subsection{Physical quantities and quantized vortices}
+
+The key physical quantities associated with a wave function $\psi$ are the
+\emph{supercurrent}
+\[
+  j(\psi) = \frac{1}{2\mathrm{i}}\bigl(\bar\psi\,\nabla\psi - \psi\,\nabla\bar\psi\bigr)
+\]
+and the \emph{vorticity} (Jacobian)
+\[
+  J\psi = \tfrac{1}{2}\nabla \times j(\psi) = \det \nabla\psi.
+\]
+A striking feature of GP dynamics is the appearance of
+\emph{quantized vortices}: isolated zeros of $\psi$ around which
+$j(\psi)$ winds with integer topological degree $d_j = \pm 1$.
+The density $\abs{\psi}^2$ drops to zero in a small core of radius $\sim\varepsilon$
+around each vortex location.
+
+In the singular limit $\varepsilon \to 0$, the vorticity concentrates as
+\[
+  J\psieps(t) \;\to\; \pi\sum_{j=1}^N d_j\,\delta_{a_j(t)},
+\]
+and the vortex positions $a(t) = (a_1(t),\ldots,a_N(t))$ solve the
+\emph{point vortex system}
+\begin{align}
+  \dot{a}_j(t)
+  = -\frac{1}{\pi}\,d_j\,\symp\,\nabla_{a_j} W(a(t), d),
+  \qquad a_j(0) = a_j^0,
+  \label{eq:ODE}
+\end{align}
+where
+\[
+  \symp = \begin{pmatrix} 0 & 1 \\ -1 & 0 \end{pmatrix}
+\]
+is the symplectic matrix and $W$ is the renormalized energy defined below.
+Equation~\eqref{eq:ODE} is a Hamiltonian ODE in $\R^{2N}$:
+$\symp$ rotates the gradient by $90^\circ$, so vortices move
+\emph{perpendicular} to $\nabla W$ rather than along it,
+causing same-sign vortices to orbit each other.
+
+\subsection{The canonical harmonic map $u^*$}
+
+The limiting object of $\psieps$ as $\varepsilon \to 0$ is the
+\emph{canonical harmonic map}.
+It is not a modelling ansatz but the proven limit:
+$\psieps(t) \to u^*(a(t),d)$ in $W^{1,p}(\Omega)$ for $p < 2$
+(Colliander--Jerrard, Lin--Xin).
+
+Given vortex positions $a \in \Omega^{*N}$ and degrees $d \in \{\pm 1\}^N$,
+we want a map $u^*\colon\Omega \to \C$ that
+\begin{itemize}
+  \item satisfies $\abs{u^*} = 1$ away from the vortex locations
+        (i.e.\ lives on the unit circle $S^1$),
+  \item has topological winding number $d_j$ around each $a_j$, and
+  \item satisfies the homogeneous Neumann condition
+        $\partial_\nu u^* = 0$ on $\partial\Omega$.
+\end{itemize}
+These conditions uniquely determine the supercurrent $j(u^*)$ via
+\begin{align}
+  \nabla \cdot j(u^*) &= 0,
+  \label{eq:ustar-div}\\
+  \nabla \times j(u^*) &= 2\pi\sum_{j=1}^N d_j\,\delta_{a_j},
+  \label{eq:ustar-curl}\\
+  \nu \cdot j(u^*) &= 0 \quad\text{on } \partial\Omega.
+  \label{eq:ustar-bc}
+\end{align}
+This is precisely the 2D incompressible Euler vorticity equation with
+point vortices. Via the Biot--Savart law it gives
+\[
+  j(u^*) = -\nabla \times G,
+  \qquad
+  G(x; a,d) = \sum_j d_j \ln\abs{x-a_j} + R(x; a,d),
+\]
+where $R(\cdot\,;a,d)$ is the harmonic boundary correction solving
+\begin{align}
+  \Delta R = 0 \text{ in } \Omega, \qquad
+  R = -\sum_{j=1}^N d_j \ln\abs{x - a_j} \text{ on } \partial\Omega.
+  \label{eq:R-laplace}
+\end{align}
+Working back from $j(u^*)$ to $u^*$ (which is determined up to a global phase)
+yields the explicit product formula
+\begin{align}
+  u^*(x; a,d)
+  = \exp\!\bigl(\mathrm{i}\,H(x)\bigr)
+    \prod_{j=1}^N
+    \left(\frac{x - a_j}{\abs{x - a_j}}\right)^{\!d_j},
+  \label{eq:ustar}
+\end{align}
+where $H\colon\Omega \to \R$ is the unique zero-mean harmonic function
+chosen so that $u^*$ satisfies the Neumann boundary condition.
+Each factor $\bigl((x-a_j)/\abs{x-a_j}\bigr)^{d_j}$ is the unit complex number
+pointing from $a_j$ to $x$, raised to the power $d_j$;
+as $x$ winds once around $a_j$, this factor rotates by $2\pi d_j$,
+encoding the correct topological winding.
+
+Note that $u^*$ has genuine singularities at the $a_j$
+(it lies in $W^{1,p}(\Omega, S^1)$ only for $p < 2$),
+which is why it cannot be used directly as initial data for the PDE
+and must be smoothed out.
+
+\subsection{The renormalized energy}
+
+The Ginzburg--Landau energy diverges as $\varepsilon \to 0$
+with a logarithmic self-energy $\pi\ln(1/\varepsilon)$ per vortex.
+After subtracting this divergence one obtains the
+\emph{renormalized energy}
+\begin{align}
+  W(a,d)
+  = -\pi\!\!\sum_{1 \le i \ne j \le N}\!\! d_i d_j \ln\abs{a_i - a_j}
+    - \pi\sum_{j=1}^N d_j R(a_j; a,d),
+  \label{eq:W}
+\end{align}
+so that $E_\varepsilon(u_\varepsilon) - N(\pi\ln(1/\varepsilon) + \gamma) \approx W(a,d)$
+as $\varepsilon \to 0$ for an explicit constant $\gamma > 0$.
+The first sum captures \emph{vortex--vortex interaction}:
+same-sign vortices repel ($d_i d_j = +1$ makes the $-\ln$ term large and negative
+when $a_i \approx a_j$) and opposite-sign vortices attract.
+The second sum captures \emph{vortex--boundary interaction}
+through the harmonic correction $R$.
+We also define the full approximation
+\[
+  W_\varepsilon(a,d) = N\!\left(\gamma + \pi\ln\tfrac{1}{\varepsilon}\right) + W(a,d),
+\]
+which approximates $E_\varepsilon$ for a wave function made of vortices at $a$.
+
+\subsection{Well-prepared initial conditions}
+
+\begin{definition}[Well-prepared initial conditions]
+  A family $(\psieps^0)_{\varepsilon > 0}$ is \emph{well-prepared}
+  if, for some $C > 0$, $0 < \alpha < 1$, and $\varepsilon$ small enough:
+  \begin{enumerate}
+    \item There exist vortex positions
+          $a^0 = (a_j^0)_{j=1,\ldots,N} \in \Omega^{*N}$
+          and degrees $d \in \{\pm1\}^N$ such that
+          \[
+            \Bigl\| J\psieps^0 - \pi\sum_{j=1}^N d_j\,\delta_{a_j^0}
+            \Bigr\|_{\dot W^{-1,1}} \le C\varepsilon^\alpha
+          \]
+          and the vortices are mutually well-separated.
+    \item The energy is near-optimal:
+          \[
+            E_\varepsilon(\psieps^0) \le W_\varepsilon(a^0, d) + C\varepsilon^{1/2}.
+          \]
+  \end{enumerate}
+\end{definition}
+
+The key result of Jerrard--Spirn~\cite{JerrardSpirnRefined2008} is that
+well-preparedness is \emph{preserved} along the GP flow.
+
+\begin{theorem}[Jerrard--Spirn]
+  \label{thm:JS}
+  Let $\psieps$ solve~\eqref{eq:GP} with well-prepared initial conditions
+  and initial vortices at $a^0$ with degrees $d$.
+  Then for all $0 \le t \le \tau_{\varepsilon,a^0}$,
+  \begin{align}
+    \Bigl\| J\psieps(t) - \pi\sum_j d_j\,\delta_{a_j(t)}
+    \Bigr\|_{\dot W^{-1,1}} &\lesssim \varepsilon^\beta,
+    \label{eq:JS-Jac}\\
+    \bigl\| j(\psieps(t)) - j(u^*(a(t),d)) \bigr\|_{L^{4/3}} &\lesssim \varepsilon^\gamma,
+    \label{eq:JS-j}
+  \end{align}
+  where $a(t)$ solves~\eqref{eq:ODE} and $0 < \beta, \gamma \le 1/2$.
+\end{theorem}
+
+Theorem~\ref{thm:JS} is the theoretical foundation of the method:
+it says the true GP solution stays close to the canonical harmonic map
+with vortices at the ODE positions, \emph{for small but finite $\varepsilon$},
+not just in the limit.
+
+% ============================================================
+\section{Method}
+% ============================================================
+
+\subsection{Motivation: why not solve the PDE directly?}
+
+Standard approaches for~\eqref{eq:GP} use time-splitting together
+with a uniform spatial discretisation (Fourier pseudo-spectral or finite elements).
+These methods are perfectly adequate for smooth solutions,
+but in the regime of small $\varepsilon$ they face a fundamental obstacle:
+resolving a vortex core of size $\sim\varepsilon$ requires a mesh size $h \ll \varepsilon$
+and, due to CFL constraints, a time step $\delta t \ll \varepsilon^2$.
+The paper reports that a reference simulation for $\varepsilon = 0.01$
+took approximately one week on a small cluster.
+The method presented here removes $\varepsilon$ from the discretisation
+constraints entirely.
+
+\subsection{Constructing well-prepared initial conditions}
+
+Starting from the canonical harmonic map $u^*$, one builds a valid
+initial condition for~\eqref{eq:GP} by multiplying in a radial cutoff
+that smoothly kills the singularities at the vortex cores:
+\begin{align}
+  \psistar(x; a^0, d)
+  = u^*(x; a^0, d)\prod_{j=1}^N f_\varepsilon\!\bigl(\abs{x - a_j^0}\bigr),
+  \label{eq:psistar}
+\end{align}
+where $f_\varepsilon\colon [0,\infty) \to [0,1]$ is the unique radially symmetric
+vortex core profile solving the one-dimensional boundary value problem
+\begin{align}
+  \frac{1}{r}(r f_\varepsilon')' - \frac{1}{r^2}f_\varepsilon
+  + \frac{1}{\varepsilon^2}(1 - f_\varepsilon^2)f_\varepsilon = 0,
+  \qquad f_\varepsilon(0) = 0,\quad f_\varepsilon(r_0) = 1.
+  \label{eq:radial-ODE}
+\end{align}
+By a scaling argument $f_\varepsilon$ depends only on the ratio $r/\varepsilon$,
+so the 1D BVP~\eqref{eq:radial-ODE} is solved \emph{once} in a preprocessing step
+and stored as an interpolator for the entire simulation.
+
+The role of each factor is clear:
+far from the vortices ($\abs{x-a_j} \gg \varepsilon$) one has $f_\varepsilon \approx 1$,
+so $\psistar \approx u^*$;
+near vortex $j$ the factor $f_\varepsilon(\abs{x-a_j})$ smoothly brings
+the density $\abs{\psistar}^2$ to zero on the scale $\varepsilon$,
+regularising the singularity of $u^*$.
+
+By Lemma~1 of~\cite{JerrardSpirnRefined2008}, the function
+$\psistar(a^0,d)$ constructed in~\eqref{eq:psistar} is well-prepared
+in the sense of the definition above.
+
+\subsection{Solving the Laplace problem via harmonic polynomials}
+
+At each time step the forcing term $F(a)$ of the ODE~\eqref{eq:ODE} requires
+evaluating $\nabla_{a_j}W$, which in turn requires solving the Laplace
+problem~\eqref{eq:R-laplace} and evaluating $\nabla R$ at the vortex positions.
+On the unit disk $\Omega = B_1(0)$ this is done spectrally via
+the following three steps.
+
+Define the family of harmonic polynomials
+$h_1 \equiv 1$, $h_{2m}(x,y) = \operatorname{Re}(x+\mathrm{i}y)^m$,
+$h_{2m+1}(x,y) = \operatorname{Im}(x+\mathrm{i}y)^m$
+for $m \ge 1$.
+On the boundary $\partial\Omega$ these restrict to the standard Fourier basis.
+
+\begin{enumerate}
+  \item \textbf{Boundary data.}
+        Evaluate
+        \[
+          g_a(e^{\mathrm{i}\theta})
+          = -\sum_{j=1}^N d_j\ln\bigl\lvert(\cos\theta,\sin\theta) - a_j\bigr\rvert
+        \]
+        on a fine angular grid and compute its Fourier coefficients
+        $\hat g_a(k)$ for $\abs{k} \le n$ via a single FFT.
+  \item \textbf{Harmonic extension.}
+        Set
+        \[
+          R_n(re^{\mathrm{i}\theta})
+          = \sum_{k=-n}^{n} r^{\abs{k}}\,\hat g_a(k)\,e^{\mathrm{i}k\theta}.
+        \]
+        Each term $r^{|k|}e^{\mathrm{i}k\theta}$ is harmonic,
+        so $R_n$ is harmonic by linearity and matches $P_n g_a$ on $\partial\Omega$.
+        No linear system needs to be solved.
+  \item \textbf{Gradient evaluation.}
+        Differentiate $R_n$ term-by-term analytically
+        and evaluate at each vortex position $a_j$.
+\end{enumerate}
+
+Since $g_a$ is smooth on $\partial\Omega$ as long as the vortices stay
+away from the boundary, the Fourier coefficients decay faster than
+any polynomial in $k$, yielding \emph{spectral accuracy} in $n$.
+
+\subsection{The full algorithm}
+
+The method proceeds in three stages, summarised in Figure~3 of~\cite{CorsoKemlinMelcherStamm2024}.
+
+\medskip
+\textbf{Preprocessing (done once):}
+\begin{enumerate}
+  \item Solve the 1D BVP~\eqref{eq:radial-ODE} for $f_\varepsilon$
+        and store the result.
+  \item Compute the initial phase $H$ by solving a Laplace equation
+        via harmonic polynomials.
+  \item Build the initial wave function
+        $\psieps^0 = \psistar(a^0, d)$ via~\eqref{eq:psistar}.
+\end{enumerate}
+
+\textbf{Time evolution (cheap, seconds on a laptop):}
+\begin{enumerate}
+  \setcounter{enumi}{3}
+  \item Integrate the Hamiltonian ODE~\eqref{eq:ODE} using RK4
+        with time step $\delta t = 10^{-3}$, evaluating $F(a(t))$
+        at each stage via the harmonic polynomial method above.
+\end{enumerate}
+
+\textbf{Reconstruction (at any desired output time $t$):}
+\begin{enumerate}
+  \setcounter{enumi}{4}
+  \item Build the approximate wave function
+        \begin{align}
+          \psistar(t)
+          = u^*\!\bigl(\,\cdot\,; a(t), d\bigr)
+            \prod_{j=1}^N f_\varepsilon\!\bigl(\abs{\,\cdot\, - a_j(t)}\bigr),
+          \label{eq:reconstruct}
+        \end{align}
+        where $u^*(a(t),d)$ requires solving one further Laplace equation
+        for the updated phase $H$.
+\end{enumerate}
+
+\medskip
+The key observation is that $\varepsilon$ enters \emph{only} through step~1.
+The ODE integration and the reconstruction are completely independent of $\varepsilon$.
+In contrast, standard PDE solvers require $h \ll \varepsilon$ and $\delta t \ll \varepsilon^2$,
+so their cost diverges as $\varepsilon \to 0$.
+Here, the cost is controlled entirely by the inter-vortex distance $\rho_T$,
+which is an $O(1)$ quantity.
+
+The method has two limitations worth stating explicitly:
+it is valid only up to the first vortex collision (where the ODE blows up),
+and it cannot capture nonlinear phenomena such as radiation or sound waves
+triggered by near-collisions.
+
+% ============================================================
+\section{Error Analysis}
+% ============================================================
+
+\subsection{Sources of error}
+
+The total error between the true GP solution $\psieps(t)$ and the
+reconstructed approximation $\psistar(t)$ has three independent sources,
+visible in the triangle inequality
+\[
+  \bigl\|j(\psieps(t)) - j(\psistar(t))\bigr\|_{L^{4/3}}
+  \le
+  \underbrace{\bigl\|j(\psieps(t)) - j(u^*(a(t),d))\bigr\|_{L^{4/3}}}_{\text{GP limit error, } \lesssim\,\varepsilon^\gamma}
+  +
+  \underbrace{\bigl\|j(u^*(a(t),d)) - j(u^*(b(t),d))\bigr\|_{L^{4/3}}}_{\text{ODE trajectory error}}
+  +
+  \underbrace{\bigl\|j(u^*(b(t),d)) - j(\psistar(t))\bigr\|_{L^{4/3}}}_{\text{reconstruction error, } \lesssim\,\varepsilon^{1/2}},
+\]
+where $a(t)$ is the exact Hamiltonian trajectory and $b(t)$ is the
+numerically computed one. The first term is bounded by Theorem~\ref{thm:JS}.
+The third term is bounded by $\varepsilon^{1/2}$ using the same argument
+as Proposition~1.
+The middle term requires bounding $\abs{a(t) - b(t)}$,
+which is the content of Lemma~\ref{lem:ODE-error} below.
+
+The trajectory error $\abs{a(t) - b(t)}$ itself arises from two sources:
+\begin{itemize}
+  \item \textbf{PDE discretisation error:} the Laplace problem is solved
+        only approximately with $n$ harmonic polynomials, so $F^n \ne F$.
+  \item \textbf{Time discretisation error:} RK4 integrates $\dot b = F^n(b)$
+        with finite time step $\delta t$, introducing a global error $O(\delta t^4)$.
+\end{itemize}
+
+\subsection{Estimating the trajectory error}
+
+We first bound the error on the continuous dynamics (exact time, approximate forcing).
+
+\begin{lemma}[Continuous dynamical error]
+  \label{lem:cont-error}
+  Let $a^0, b^0 \in \Omega^{*N}$, let $a(t)$ solve~\eqref{eq:ODE}
+  exactly with forcing $F$, and let $b(t)$ solve $\dot b = F^n(b)$
+  with the same initial data and degrees.
+  Define
+  \[
+    \rho(a) := \min_{j \ne \ell}\bigl\{\operatorname{dist}(a_j, \partial\Omega),\, \abs{a_j - a_\ell}\bigr\}.
+  \]
+  Suppose $\rho_T := \inf_{t \in [0,T]} \rho(a(t)) > 0$.
+  Then
+  \begin{align}
+    \abs{a(t) - b(t)}
+    \le C\!\left(
+      \abs{a^0 - b^0}
+      + \frac{\sup_{s \in [0,T]}
+              \norm{P_n^\perp g_{a(s)}}_{L^2(\partial\Omega)}}{\rho_T^{3/2}}
+    \right)
+    \exp\!\Bigl(\tfrac{Ct}{\rho_T^{5/2}}\Bigr),
+    \label{eq:cont-error}
+  \end{align}
+  where $g_a(x) = -\sum_j d_j\ln\abs{x - a_j}$.
+\end{lemma}
+
+The term $\norm{P_n^\perp g_a}_{L^2(\partial\Omega)}$ measures how well
+the boundary data is approximated by $n$ Fourier modes.
+By Lemma~4 of~\cite{CorsoKemlinMelcherStamm2024} (spectral estimates for log functions),
+if $\Omega$ is the unit disk then
+\[
+  \norm{P_n^\perp g_a}_{L^2(\partial\Omega)}
+  \lesssim_\ell \frac{n^{-\ell+\frac{1}{2}}}{\rho_T^{\ell-\frac{1}{2}}}
+  \quad\text{for any } \ell \in \N,
+\]
+which decays faster than any polynomial in $n$ (spectral convergence).
+
+The time discretisation error is handled separately.
+
+\begin{lemma}[Time discretisation error]
+  \label{lem:time-error}
+  Let $b(t)$ be the exact solution to $\dot b = F^n(b)$
+  and let $(b^k_{\delta t})_{k\delta t \le T}$ be its RK4 approximation
+  with time step $\delta t$:
+  \begin{align*}
+    b^0_{\delta t} &= b^0, \\
+    b^k_{\delta t} &= b^{k-1}_{\delta t}
+                     + \delta t\,\Phi_{\delta t,n}(b^{k-1}_{\delta t}),
+  \end{align*}
+  where $\Phi_{\delta t,n}$ is the RK4 increment function for $F^n$.
+  Assume
+  \[
+    0 < \rho_T
+    = \min\!\Bigl(
+        \inf_{0 \le t \le T}\rho(b(t)),\;
+        \min_{k\delta t \le T}\rho(b^k_{\delta t})
+      \Bigr).
+  \]
+  Then there exist constants $C_{\rho_T}, \Lambda_{\rho_T} > 0$,
+  depending on $\rho_T$ but not on $n$, $b$, or $\delta t$, such that
+  \begin{align}
+    \max_{k\delta t \le T} \abs{b(k\delta t) - b^k_{\delta t}}
+    \le \delta t^4\,\frac{C_{\rho_T}}{\Lambda_{\rho_T}}
+        \bigl(e^{\Lambda_{\rho_T}T} - 1\bigr).
+    \label{eq:time-error}
+  \end{align}
+\end{lemma}
+
+Combining Lemmas~\ref{lem:cont-error} and~\ref{lem:time-error} via the
+triangle inequality gives the main error bound on the ODE trajectory.
+
+\begin{lemma}[ODE trajectory error]
+  \label{lem:ODE-error}
+  Under the assumptions of Lemmas~\ref{lem:cont-error}
+  and~\ref{lem:time-error}, with $a^0 = b^0$, one has
+  \begin{align}
+    \abs{a(t) - b(t)}
+    \lesssim_{\ell,T}
+    \bigl(1 - \rho_T\bigr)^n n^{1-\ell} + \delta t^4
+    \quad\text{for any } \ell \in \N \text{ and } t \le T,
+    \label{eq:ODE-error}
+  \end{align}
+  where the implicit constant depends on $\ell$, $T$, and $\rho_T$
+  but is independent of $n$ and $\delta t$.
+\end{lemma}
+
+\subsection{Proof sketch of Lemma~\ref{lem:cont-error}}
+
+The proof applies Gronwall's inequality to the error $e(t) = a(t) - b(t)$.
+Differentiating and using the triangle inequality gives
+\[
+  \abs{\dot a(t) - \dot b(t)}
+  = \abs{F(a(t)) - F^n(b(t))}
+  \le E_1(a,b) + E_2(a) + E_3(a,b),
+\]
+where the three terms isolate different sources:
+\begin{itemize}
+  \item $E_3(a,b) = \abs{\sum_{k\ne j} d_k\!\left(\frac{b_j-b_k}{\abs{b_j-b_k}^2}
+        - \frac{a_j-a_k}{\abs{a_j-a_k}^2}\right)}$:
+        position error in the explicit vortex--vortex term.
+        Bounded via the Lipschitz estimate
+        $\abs{x/\abs{x}^2 - y/\abs{y}^2} \lesssim \abs{x-y}/\min(\abs{x},\abs{y})^2$,
+        giving $E_3 \lesssim \abs{a-b}/\rho_T^2$.
+
+  \item $E_2(a) = \abs{\nabla R_n(a_j; a,d) - \nabla R(a_j; a,d)}$:
+        PDE discretisation error at the correct positions.
+        The difference $R_n - R$ solves a Laplace equation with boundary data
+        $P_n^\perp g_a$; applying the interior gradient estimate~\eqref{eq:R-laplace}
+        gives $E_2 \lesssim \norm{P_n^\perp g_a}_{L^2}/ \rho_T^{3/2}$,
+        which decays spectrally in $n$.
+
+  \item $E_1(a,b) = \abs{\nabla R_n(b_j; b,d) - \nabla R_n(a_j; a,d)}$:
+        position error in the PDE part.
+        Split further by adding and subtracting $\nabla R_n(a_j; b,d)$:
+        the first piece bounds the sensitivity of $\nabla R_n$ to vortex
+        positions via the $H^s$ estimate~(49), the second bounds the
+        sensitivity to the evaluation point via the interior estimate~(43).
+        Both give contributions $\lesssim \abs{a-b}/\rho_T^{5/2}$.
+\end{itemize}
+Summing and noting $|Jv| = |v|$ (since $J$ is an isometry):
+\[
+  \abs{\dot e(t)} \lesssim \frac{\abs{e(t)}}{\rho_T^{5/2}}
+  + \frac{\norm{P_n^\perp g_{a(t)}}_{L^2}}{\rho_T^{3/2}}.
+\]
+Gronwall's inequality then gives~\eqref{eq:cont-error} directly. \qed
+
+\subsection{Main error theorem}
+
+Assembling all contributions yields the main result.
+
+\begin{theorem}[Error on supercurrents]
+  \label{thm:main-error}
+  Let $\psieps(t)$ be the solution of~\eqref{eq:GP} with well-prepared
+  initial conditions and let $\psistar(t)$ be the reconstructed approximation.
+  Then for any $t \le T$ and $\ell \in \N$,
+  \begin{align}
+    \bigl\|j(\psistar(t)) - j(\psieps(t))\bigr\|_{L^{4/3}}
+    \lesssim_{\ell,T}
+    \varepsilon^\gamma
+    + n^{-\ell + \frac{1}{2}}
+    + \sqrt{(1-\rho_T)^n n^{1-\ell} + \delta t^4},
+    \label{eq:main-error}
+  \end{align}
+  where $0 < \gamma \le 1/2$ and the implicit constant is independent
+  of $\varepsilon$, $n$, and $\delta t$.
+\end{theorem}
+
+Two features of~\eqref{eq:main-error} are worth highlighting.
+First, the $\varepsilon^\gamma$ term \emph{decreases} as $\varepsilon \to 0$:
+the method is \emph{asymptotically exact}, in contrast to standard PDE solvers
+whose cost diverges.
+Second, the discretisation parameters $n$ and $\delta t$ appear independently
+of $\varepsilon$, so they can be chosen based on the inter-vortex distance $\rho_T$
+alone.
+
+% ============================================================
+\section{Numerical Results}
+% ============================================================
+
+\subsection{Vortex trajectories}
+
+Figure~2 of~\cite{CorsoKemlinMelcherStamm2024} shows trajectories for
+eight initial configurations computed in the singular limit $\varepsilon \to 0$
+using a RK4 solver with $\delta t = 10^{-3}$ and $n = 64$ harmonic polynomials.
+The ODE is solved in a few seconds on a personal laptop.
+
+Key observations:
+\begin{itemize}
+  \item \textbf{Case 1} (two same-sign vortices): the vortices orbit
+        each other on a circle, consistent with the 2D point vortex theory.
+  \item \textbf{Case 2} (opposite-sign pair): the two vortices translate
+        together without orbiting, showing attraction.
+  \item \textbf{Cases 7--8} (nine vortices): complex collective motion,
+        still computed in seconds.
+\end{itemize}
+
+\subsection{Convergence of the ODE solver}
+
+Figure~8 of~\cite{CorsoKemlinMelcherStamm2024} shows convergence of the
+trajectory error $\abs{a(T) - b(T)}$ at $T = 1$:
+\begin{itemize}
+  \item \textbf{Spectral convergence in $n$}: the log-linear plot is
+        consistent with exponential decay, confirming the spectral accuracy
+        of the harmonic polynomial method.
+  \item \textbf{Fourth-order convergence in $\delta t$}:
+        confirms the RK4 theory.
+  \item Pre-factors are larger for vortices near each other or near the
+        boundary (small $\rho_T$), consistent with Lemma~\ref{lem:ODE-error}.
+\end{itemize}
+
+\subsection{Accuracy of the wave function approximation}
+
+Figures~10--13 of~\cite{CorsoKemlinMelcherStamm2024}
+compare $\psistar(t)$ against a finite element reference solution
+for Case~1 ($\varepsilon \in \{0.01, 0.03, 0.05, 0.07, 0.1\}$,
+reference computed on a refined mesh with $h = 2\cdot 10^{-3}$
+at a cost of approximately one week of cluster time for $\varepsilon = 0.01$).
+
+\begin{itemize}
+  \item \textbf{Figure~10}: vortex trajectories for finite $\varepsilon > 0$
+        oscillate around the limiting $\varepsilon = 0$ trajectory;
+        the oscillations shrink as $\varepsilon \to 0$.
+  \item \textbf{Figure~11}: all error norms
+        (supercurrents $L^{4/3}$, wave function $L^2$, gradient $H^1$)
+        decrease with $\varepsilon$, as predicted by Theorem~\ref{thm:main-error}.
+  \item \textbf{Figure~12}: the smoothed reconstruction $\psistar$
+        outperforms the raw canonical harmonic map $u^*$,
+        especially for the supercurrents.
+  \item \textbf{Figure~13}: linear regression in $\log\varepsilon$ gives
+        an exponent $\gamma > 1/2$ for the reconstructed solution,
+        better than the theoretical lower bound $\gamma = 1/2$.
+\end{itemize}
+
+\newpage
+\printbibliography
+
+\end{document}
