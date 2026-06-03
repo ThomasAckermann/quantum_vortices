@@ -1,0 +1,394 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage[
+  top=2cm,
+  bottom=2cm,
+  left=2cm,
+  right=2cm
+]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+% Graphics & floats
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\setlength{\parindent}{0pt}
+
+% References & links
+\usepackage[
+  backend=biber,
+  style=alphabetic,
+  sorting=nyt
+]{biblatex}
+\addbibresource{references.bib}
+\usepackage[
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=blue,
+  urlcolor=blue
+]{hyperref}
+
+% Miscellaneous
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{booktabs}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\N}{\mathbb{N}}
+%\newcommand{\i}{\text{i}}
+\newcommand{\Eeps}{E_\varepsilon}
+\newcommand{\psieps}{\psi_\varepsilon}
+\newcommand{\ustar}{u^*}
+\newcommand{\psistar}{\psi^*_\varepsilon}
+\newcommand{\Wren}{W}
+\newcommand{\Jac}{J\psi}
+\newcommand{\sj}{j(\psi)}
+\newcommand{\Lap}{\Delta}
+\newcommand{\dd}{\,\mathrm{d}}
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}
+\newcommand{\inner}[2]{\left\langle #1,\, #2 \right\rangle}
+
+% Shorthand for the symplectic matrix
+\newcommand{\symp}{J_{\mathrm{symp}}}
+
+\title{
+  \Large\textbf{Numerical Simulation of Quantized Vortices\\
+  with Small Core Size via Vortex Tracking}\\[0.5em]
+  \large Complex Quantum Systems and Vortex Dynamics\\
+  KIT --- Fakultät für Mathematik, Sommersemester 2026
+}
+\author{Thomas Ackermann}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\section{Introduction}
+
+Ginzburg-Landau Hamiltonian with core size $\varepsilon$:
+\begin{align}
+    E_\varepsilon (u) = \int_\Omega \frac{1}{2} |\nabla u|^2 + \frac{1}{4 \varepsilon^2} (1- |u|^2)^2
+\end{align}
+\begin{itemize}
+    \item GP PDE: $i \partial_t \psieps = \Delta \psieps + \frac{1}{\varepsilon^2} (1 - |\psieps|^2) \psieps$
+    \item Ansatz for solution: $\phi_\varepsilon (x) = f_{\varepsilon, r_0} (|x|) \exp (i \theta(x))$
+    \item $f_{\varepsilon, r_0}(0) = 0$, $f(\varepsilon, r_0) (r_0)= 1$
+    \item draw graph
+\end{itemize}
+Renormalized energy
+\begin{itemize}
+    \item Ginzburg-Landau energy diverges as $\varepsilon \to 0$.
+    \item This divergence comes purely from the self-energy - no information about vortex interactions
+    \item After subtracting the divergence we get the renormalized energy
+\end{itemize}
+
+\begin{align}
+  W(a,d) =  - \pi \sum_{1 \leq i \neq j \leq N} d_i d_j \log |a_i - a_j| - \pi \sum_j d_j R(a_j ; a, d)
+\end{align}
+\begin{itemize}
+    \item first term: vortex-vortex interaction
+    \item second term: vortex-boundary interaction
+    \item $R$ is harmonic correction that enforces the Neumann boundary condition
+\end{itemize}
+
+Important Quantities:
+\begin{itemize}
+  \item Supercurrents $j(\psi) = \frac{1}{2i}(\overline{\psi} \nabla - \psi \nabla \overline{\psi})$
+  \item Vorticity: $J \psi = \frac{1}{2} \nabla \times j(\psi)$
+\end{itemize}
+
+For $\varepsilon \to 0$:
+$J \psieps (t) \to \pi \sum^N_{j=1} d_j \delta_{a_j (t)}$
+The singular points solve:
+\begin{align}
+  &\dot a_j (t) = - \frac{1}{\pi} d_j J \nabla_{a_j} W(a(t), d) \\
+  &a_j(0) = a^0_j
+\end{align}
+
+\begin{align}
+    \nabla_{a_j} W(a,d) = - 2\pi d_j \nabla_x (R(x; a,d) + \sum^n_{j\neq k} d_k \log |x-a_k|)\vert_{x=a_j}
+\end{align}
+Boundary terms in the renormalized energy $R(x; a,d)$ which solves
+\begin{align}
+  &\Delta R = 0 \text{, in } \Omega \\
+  &R = - \sum^N_{j=1} d_j \log |x-a_j| \text{, on } \partial \Omega
+\end{align}
+
+\begin{itemize}
+    \item Following: condtions that determine the supercurrents
+    \item They in turn determine harmonic map $u^*$
+\end{itemize}
+\begin{align}
+  &\nabla j(u^*) =0\\
+  &\nabla \times j(u^*) = 2\pi \sum^N_{j=1} d_j \delta_{a_j} \\
+  &\nu j(u^*) =0 \text{ on } \partial \Omega
+\end{align}
+Where $\nu$ is the direction of the outward normal of $\partial \Omega$.\\ 
+$u^*$ is then given by
+\begin{align}
+  u^* (x; a,d) = \exp (i H(x)) \prod^N_{j=1} \frac{x-a_j}{|x-a_j|}^{d_j}
+\end{align}
+$H(x)$ is a harmonic function that is determined such that $u^*$ satisfies the Neumann boundary condition.
+
+\begin{definition}
+  A familiy of inital conditions $(\psieps^0)_{\varepsilon>0}$ is said to be well-prepared if it satisfies the following assumptions,
+  for some constant $C>=0$, $0<\alpha<1$ and $\varepsilon$ small enough:
+  \begin{enumerate}
+    \item There exists $N$ vortices with positions
+    $a^0 = (a^0_j)_{j=1, \ldots , N} \in \Omega^{*N}$
+    and degrees $d= (d_j)_{j=1, \ldots, N} \in \{\pm 1\}^N$
+    such that
+    \begin{align}
+      ||J\psieps^0 - \pi \sum^N_{j=1} d_j \delta_{a_j^0}|| \leq C \varepsilon^\alpha 
+    \end{align}
+    and the vortices are distant enough
+    \item the energy of $\psieps^0$ is close to be optimal:
+    \begin{align}
+      E_\varepsilon (\psieps^0) \leq W_\varepsilon (a_0, d) + C \varepsilon^{1/2}
+    \end{align}
+  \end{enumerate}
+\end{definition}
+$\dot W^{-1, 1}$ is the dual space of $W^{1, \infty}$
+The norm is given by:
+\begin{align}
+    ||\mu||_{\dot W^{-1, 1}} = \sup \{\int_\Omega \varphi \dd \mu : ||\nabla \varphi||_{L^\infty} \leq 1, \varphi \in W^{1, \infty}_0 (\Omega)\}
+\end{align}
+
+\begin{theorem}
+    Let $\psieps$ solve the equation corresponding to the Schrödinger flow of the Ginzburg energy, with well-prepared initial conditions
+    for some initial vortices with positions $a^0$ and degrees $d_j$.
+    Then there exists $\gamma < 1$ and $C > 0$, such that for any $\varepsilon < \varepsilon_0$,
+    well-preparedness is preserved along time,
+In particular,
+\begin{align}
+    &||J \psieps (t) - \pi \sum^N_{j=1} d_j \delta_{a_j (t)} ||_{\dot W^{-1, 1}} \leq C \varepsilon^\gamma \\
+    & || j(\psieps (t)) - j(u^* (a(t), d))_{L^{4/3}} \leq C \varepsilon^\gamma
+\end{align}
+\end{theorem}
+
+\begin{itemize}
+    \item Question: How do we construct a well-prepared family?
+\end{itemize}
+
+For $\varepsilon$, there is a unique minimizer
+$\phi_{\varepsilon, r_0} (x) = f_{\varepsilon, r_0} (|x|) \exp (i \theta(x))$
+where $f_{\varepsilon, r^0}$ satisfies an ODE, which we have seen before. 
+
+Starting from the localized approximation $\phi_\varepsilon$ of a single vortex one can the build the following inital condition:
+\begin{align}
+    \psieps^* (x; a^0, d) = u^* (x; a^0, d) \prod^N_{j=1} f_\varepsilon (|x- a^0_j|), \quad x \in \overline \Omega
+\end{align}
+which has the well preparedness properties.
+
+\section{Method}
+\textbf{Idea}
+\begin{itemize}
+    \item FEM requires fine mesh for small $\varepsilon$
+    \item here $\varepsilon is not the limiting factor$
+    \item we can use the point vortex system to track the vortex positions
+    \item we can then build an approximation of the wave function from the vortex positions and use
+    it as an initial condition for the PDE solver
+\end{itemize}
+$R$ can be solved numerically like this:
+\begin{enumerate}
+\item Choose a maximum degree $n$ and fix it
+\item Compute the Fourier coefficients of the Dirichlet boundary condition up to order $n$ for instance using a FFT
+\item Compute the approximate solution $R_n$ as the harmonic expansion of $\mathbb{P}_n g_a$
+\begin{align}
+    R_n (r \exp (i \theta)) = \sum^n_{k=-n} r^{|k|} \hat g_a (k) \exp (i k \theta)
+\end{align}
+\end{enumerate}
+
+\subsection{Algorithm}
+
+\subsubsection{Step 1: Constructing well-prepared initial conditions}
+\begin{itemize}
+\item Define initial vortex positions and degrees. Set up the initial phase $H$ such that the Neumann boundary condition is satisfied.
+\item Compute the radial function $f_\varepsilon$
+\end{itemize}
+\subsubsection{Step 2: evolve vortex positions via Hamiltonian ODE}
+
+solve the ODE using RK4
+and compute $R$ as described before.
+\\
+\subsubsection{Computing $R$}
+\begin{itemize}
+    \item The solution $R$ is harmonic and the boundary conditions are smooth as long as the vortices stay away from the boundary.
+    \item We use harmonic polynomials as a basis to solve the PDE.
+    \item For simplicity we choose as the unit disk.
+\end{itemize}
+harmonic polynomials:
+\begin{align}
+    \begin{cases}
+        h_1 = 1 \\
+        h_{2m} = \Re (x+ i y)^m \\
+        h_{2m + 1} =  \Im (x+ iy)^m
+    \end{cases}
+\end{align}
+for $x,y \in \mathbb \R$.
+
+\begin{itemize}
+    \item When $\Omega$ is the unit disk, the restriction of these polynomials to the boundary is nothing else than the Fourier basis.
+    \item Denote by $\mathbb{P}_n$ the orthogonal projection from $L^2 \partial(\Omega)$ to $\mathcal X_n := \text{span}\{h_k \mid_{\partial\Omega}, i \leq k \leq 2n+1\}$.
+\end{itemize}
+
+\begin{itemize}
+    \item In polar coordinates: $\Delta R = \frac{1}{r} \partial_r (r \partial_r R) + \frac{1}{r^2} \partial_{\theta}^2 R$
+    \item Ansatz: $R(r,\theta) = f(r) \exp (i k \theta)$ for some $k \in \mathbb Z$.
+    \item This gives us the ODE: $f''(r) + \frac{1}{r} f'(r) - \frac{k^2}{r^2} f(r) = 0$
+    \item Using the Ansatz $f(r)= r^\alpha$ you get $\alpha = \pm |k|$
+    \item one gets: $R_k(r, \theta) = r^{|k|} \exp(i k \theta)$
+    \item PDE is linear therefore linear combinations are solutions
+    \item on the unit circle for harmonic functions one gets: $R(r, \theta) = \sum^\infty_{-\infty} c_k r^{|k|} \exp(i k \theta)$
+    \item the coefficients are determined by the boundary conditions
+    \item At the boundary: $R(1, \theta) = \sum^\infty_{-\infty} c_k \exp(i k \theta) = g(\theta)$
+    \item this is just the Fourier expansion of $g$
+    \item therefore $c_k = \frac{1}{2\pi} \int^{2\pi}_0 g(\theta) \exp (- i k \theta) \dd \theta$
+\end{itemize}
+\subsubsection{Step 3: Smoothing}
+At time $t>0$ build back an approximation of the wave function from the vortex positions $a(t)$ as
+\begin{align}
+    u^* (x; a(t), d) = \exp (i H(x)) \prod^N_{j=1} (\frac{x-a_j}{|x-a_j|})^{d_j}
+\end{align}
+\begin{itemize}
+    \item $u^*$ has singularities at the vortex locations $a_j$
+    \item This is the reason we need to smooth it out before using it as an initial condition for the PDE
+    \item Key insight: $\epsilon$ only enters through the 1D preprocessing - it is no longer a discretization bottleneck
+    \item $H$ solves: $\Delta H = 0$ in $\Omega$ and $H = - \sum^N_{j=1} d_j \partial_\tau \log |x-a_j|$ on $\partial \Omega$
+    \item $\tau$ is the direction of the tangent to $\partial \Omega$
+    \item $H$ can also be solved using the same harmonic polynomial basis
+\end{itemize}
+
+\section{Error Analysis}
+
+\begin{lemma}
+  Let $\Omega \subset \R^2$ be the unit disk, let $\{a(t)\}_{t\geq 0}$ denote the exact solution to the Hamiltonian mechanics.
+  Let $b(t)$ be the approximated ODE trajectory with the same degrees and initial positions $b^0$ with harmonic polynomials of degree up to $n$
+  and time step $\delta_t$. Suppose that for some $T>0$,
+  \begin{align}
+  \rho_T = \min_{t\leq T} \min_{j\neq k} \{ |b_j (t) - b_k  (t)|, \text{dist} (b_k(t) , \partial \Omega), |a_j (t) - a_k  (t)|, \text{dist} (a_j(t) , \partial \Omega)\}>0
+  \end{align}
+  is such that $0 < \rho_T < 1$. Then we have:
+  \begin{align}
+    |a(t) - b(t)| \leq C (|a^0 -b^0| + (1- \rho_T)^n n^{1-l}) + C \delta t^4
+  \end{align}
+\end{lemma}
+
+In order to prove this we need 2 other lemmas 
+
+\begin{lemma}
+  Let $b^0, a^0 \in \Omega^{*N}$, for fixed $d \in \{\pm1\}^N$
+  and let $\rho(a) := \min_{j\neq l} \{\text{dist}(a_j, \partial\Omega) , |a_j - a_l|\}$.
+  Suppose that $\rho_T:= \text{inf}_{t\in [0,T]} \leq 0$
+  \begin{align}
+  |a(t) - b(t)| \leq  C (|a^0-b^0| + \frac{\text{sup}_{s\in [0,T]}||\mathbb{P}^\perp_n g_{a(s)}||_{L^2(\partial \Omega)}}{\rho^{3/2}_T})\exp{C t /\rho^{5/2}_T}
+  \end{align}
+  Where $g_a(x) = - \sum^N_j d_j \log |x-a_j|$
+\end{lemma} 
+\begin{proof}
+    \begin{itemize}
+\item $|F^n(b) - F(a)| \leq E_1 + E_2 + E_3$
+\item $E_1 = \sum_j^N |\nabla_x R^n(b_j; b ,d) - \nabla_x R^n(a_j; a, d)|$
+\item $E_2 = \sum_j^N |\nabla_x R^n (a_j; a, d) - \nabla R (a_j; a, d)|$
+\item $E_3 = \sum_{j \neq k} |\frac{b_j - b_k}{|b_j - b_k|^2} - \frac{a_j - a_k}{|a_j - a_k|^2}|$
+\item $E_1$ is the error made takinig different evaluation points on the boundary, $E_2$ discretizatio error, $E_3$ is the error made by the vortex-vortex interaction term
+    \end{itemize}
+
+    \textbf{$E_3$ error bound}
+    \begin{itemize}
+        \item $E_3$ is the error made by the vortex-vortex interaction term
+        \item $|\nabla \log |x-a| - \nabla \log |x-b|| \leq C \frac{|a-b|}{\min \{ |x-a|, |x-b|\}}^2$
+        \item set $x = a_j$, $a=a_k$, $b=b_k$: $E_3 \leq C \frac{a-b||}{\min \{\rho(a), \rho(b)\}^2}$
+        \item $\rho(a) = \min_{j\neq k} \{\text{dist}(a_j, \partial\Omega) , |a_j - a_k|\}$
+    \end{itemize}
+    \textbf{$E_2$ error bound}
+    \begin{itemize}
+        \item discretization error
+        \item the difference $R^n - R$ solve the Laplace equation with boundary data $P^\perp_n g_a$
+        \item $\mathbb P^\perp_n$ is the orthogonal complement of $\mathbb P_n$
+        \item this is everything that the fourier expansion of $g_a$ up to order $n$ does not capture $P^\perp_n g_a = g_a - P_n g_a = g_a - \sum^n_{k=-n} \hat g_a(k) \exp (ik\theta)$
+        \item $\Delta (R^n - R) = 0$ in $\Omega$, $R^n - R = P^\perp_n g_a$ on $\partial \Omega$
+        \item One can show that $E_2(a) \leq \frac{||\mathbb P^\perp_n g_a||_{L^2(\partial \Omega)}}{\min_j \{\text{dist} (a_j , \partial \Omega)\}^\frac{3}{2}}$ 
+    \end{itemize}
+    \textbf{$E_1$ error bound}
+    \begin{itemize}
+        \item $\sum_j^N \nabla_x R_n (a_j; b, d)$ and using triangle inequality
+        \item $E_1 (a,b) \leq \frac{|a-b|}{ \min_j \{\text{dist} (a_j , \partial \Omega), \text{dist}(b_j ,\partial \Omega)\}}$
+    \end{itemize}
+    Putting everything together we get:
+    \begin{align}
+        |\dot a(t) - \dot b(t)| \leq C (\frac{|a(t) - b(t)|}{\min \{\rho(a(t)), \rho(b(t))\}^2} + \frac{||\mathbb P^\perp_n g_{a(t)}||_{L^2(\partial \Omega)}}{\min_j \{\text{dist} (a_j , \partial \Omega)\}^\frac{3}{2}})
+    \end{align}
+    \begin{itemize}
+        \item Using the assumption on $\rho_T$ we get:
+        \begin{align}
+            |\dot a(t) - \dot b(t)| \leq C (\frac{|a(t) - b(t)|}{\rho_T^2} + \frac{||\mathbb P^\perp_n g_{a(t)}||_{L^2(\partial \Omega)}}{\rho_T^{3/2}})
+        \end{align}
+        \item Inequality: $\frac{d}{dt} |a-b| \leq |\dot a - \dot b|$
+        \item Proof of inequality: $\frac{d}{dt} |a-b| = \frac{d}{dt} \sqrt{(a-b) \cdot (a-b)} = \frac{(a-b) \cdot (\dot a - \dot b)}{|a-b|}$
+        \item use Cauchy Schwarz: $(a-b)\cdot (\dot a - \dot b) \leq |a-b| \cdot |\dot a - \dot b|$
+        \item Gronwall-inequality: if
+        \begin{align}
+            \frac{d}{dt} y(t) \leq f(t) y(t) + g(t),
+        \end{align}
+ then $y(t) \leq y(0) \exp (\int^t_0 f(s) ds) + \int^t_0 g(s) \exp (\int^t_s f(\tau) d\tau) ds$
+        \item Using Gronwall's inequality we get the desired bound
+        \end{itemize}
+\end{proof}
+
+
+The time integration errors follows from the previous bounds and standard considerations on the numerical integration of ODEs
+
+\begin{lemma}
+  Let $b$ be the exact solution to $\dot{b} = F^n (b)$ and let $(b^k_{\delta t})_{k \delta t \leq T}$ be its numerical approximation with RK4 method and time step $\delta t$
+  \begin{align}
+    b^0_{\delta t} = b^0\\
+    b^0_{\delta t} = b^{k-1}_{\delta t} + \delta t \Phi_{\delta t , n} (b^{k-1}_{\delta t})
+  \end{align}
+Where $\Phi_{\delta t, n}$ is the RK4 increment function associated with the approximate forcing term $F^n$.
+Assume that:
+\begin{align}
+  0 < \rho_T = \min (\inf_{0 \leq t \ leq T} \rho(b(t)), \min_{k \delta t \leq T} \rho (b^k_{\delta t}))
+\end{align}
+Then there exists constants $C_{\rho_T}>0$ and $\Lambda_{\rho_T}$, that depends on $\rho_T$ but not on $n, b$ or $\delta t$ such that
+the following in time error holds:
+\begin{align}
+  \max_{k \delta t < T} |b(k \delta t) - b^k_{delta_t}| \leq \delta t^4 \frac{C_{\rho_T}}{\Lambda_{\rho_T}} (\exp (\Lambda_{\rho_T} T)- 1)
+\end{align}
+\end{lemma}
+
+
+\section{Numerical Results}
+\begin{itemize}
+    \item Show error increases with bigger $\varepsilon$
+    \item Runtime: few seconds on laptop for $\varepsilon = 0.01$ and $N=10$ vortices
+    \item FEM solver took about a week to run (non-optimized code on a small cluster)
+    \item Parameters of simulation: mesh size: $2 \cdot 10^{-3}$, time step: $\delta t = 10^{-5}$
+\end{itemize}
+
+\newpage
+\printbibliography

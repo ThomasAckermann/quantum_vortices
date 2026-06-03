@@ -12,8 +12,6 @@
   left=2cm,
   right=2cm
 ]{geometry}
-\usepackage{setspace}
-\onehalfspacing
 
 % Graphics & floats
 \usepackage{graphicx}
@@ -74,10 +72,8 @@
 \newcommand{\symp}{J_{\mathrm{symp}}}
 
 \title{
-  \Large\textbf{Numerical Simulation of Quantized Vortices\\
-  with Small Core Size via Vortex Tracking}\\[0.5em]
-  \large Complex Quantum Systems and Vortex Dynamics\\
-  KIT --- Fakultät für Mathematik, Sommersemester 2026
+  \textbf{Numerical Simulation of Quantized Vortices\\
+  with Small Core Size via Vortex Tracking}\\
 }
 \author{Thomas Ackermann}
 \date{\today}
@@ -87,120 +83,69 @@
 \maketitle
 \thispagestyle{empty}
 
-\section{Introduction}
+\section{Definitions}
 
-Ginzburg-Landau Hamiltonian:
-\begin{align}
-    E_\varepsilon (u) = \int_\Omega \frac{1}{2} |\nabla u|^2 + \frac{1}{4 \varepsilon^2} (1- |u|^2)^2
-\end{align}
-
-The corresponding Schrödinger flow $i \partial_t \psi = - \nabla_{L^2} E_\varepsilon (\psi)$.
-On a smooth bounded domain with Neumann boundary conditions one arrives at:
-\begin{align}
-  i \partial_t \psi_\varepsilon = \Delta \psieps (x,t) + \frac{1}{\varepsilon^2} (1- |\psieps (x,t)|^2) \psieps(x,t)
-\end{align}
-
-Important Quantities:
-\begin{itemize}
-  \item Supercurrents $j(\psi) = \frac{1}{2i}(\overline{\psi} \nabla - \psi \nabla \overline{\psi})$
-  \item Vorticity: $J \psi = \frac{1}{2} \nabla \times j(\psi)$
-\end{itemize}
-
-For vortices:
-$J \psieps (t) \to \pi \sum^N_{j=1} d_j \delta_{a_j (t)}$
-The singular points solve:
-\begin{align}
-  &\dot a_j (t) = - \frac{1}{\pi} d_j J \nabla_{a_j} W(a(t), d) \\
-  &a_j(0) = a^0_j
-\end{align}
-
-
-We introduce the harmonic map $u^* (a,d) \in W^{1,p}(\Omega , \mathbb S^{-1})$. 
-What is it?
-Given vortex positions $a$ and degrees $d$ we want a map $u^*: \Omega \to \C$ that:
-\begin{itemize}
-  \item lives on the unit circle away from vortex locations
-  \item has exactly the right topological winding number $d_j$ around each $a_j$
-  \item satisfies homogeneous Neumann boundary conditions $\partial_\nu u^* = 0$ on $\partial \Omega$
-\end{itemize}
-
-The following conditions uniquely determine the supercurrents $j(u^*)$ which in turn determine $u^*$
-\begin{align}
-  &\nabla j(u^*) =0\\
-  &\nabla \times j(u^*) = 2\pi \sum^N_{j=1} d_j \delta_{a_j} \\
-  &\nu j(u^*) =0 \text{ on } \partial \Omega
-\end{align}
-Where $\nu$ is the direction of the outward normal of $\partial \Omega$. 
-$u^*$ is then given by
-\begin{align}
-  u^* (x; a,d) = \exp (i H(x)) \prod^N_{j=1} \frac{x-a_j}{|x-a_j|}^{d_j}
-\end{align}
-
-Where $H:\R^2 \to \R$ is some harmonic function.
-
+Ginzburg-Landau Hamiltonian with core size $\varepsilon$: $E_\varepsilon (u) = \int_\Omega \frac{1}{2} |\nabla u|^2 + \frac{1}{4 \varepsilon^2} (1- |u|^2)^2$ \\
+Renormalized energy: $W(a,d) =  - \pi \sum_{1 \leq i \neq j \leq N} d_i d_j \log |a_i - a_j| - \pi \sum_j d_j R(a_j ; a, d)$ \\
 Boundary terms in the renormalized energy $R(x; a,d)$ which solves
 \begin{align}
-  &\Delta R = 0 \text{, in } \Omega \\
-  &R = - \sum^N_{j=1} d_j \log |x-a_j| \text{, on } \partial \Omega
-\end{align}
+  &\Delta R = 0 \text{, in } \Omega, \quad R = - \sum^N_{j=1} d_j \log |x-a_j| \text{, on } \partial \Omega
+\end{align} \\
+Supercurrents $j(\psi) = \frac{1}{2i}(\overline{\psi} \nabla - \psi \nabla \overline{\psi})$ \\
+Vorticity: $J \psi = \frac{1}{2} \nabla \times j(\psi)$ \\
 
-The supercurrents of $u^*$ satisfies:
+\section{Analytical results of $\varepsilon \to 0$}
+In the singular limit $\varepsilon \to 0$, the vorticity concentrates as $J\psieps(t) \;\to\; \pi\sum_{j=1}^N d_j\,\delta_{a_j(t)}$,
+and the vortex positions $a(t) = (a_1(t),\ldots,a_N(t))$ solve the
+\emph{point vortex system}
+  \begin{align}
+    \dot{a}_j(t)
+  = -\frac{1}{\pi}\,d_j\,\symp\,\nabla_{a_j} W(a(t), d),
+  \qquad a_j(0) = a_j^0,
+  \end{align}
+where $\symp = \begin{pmatrix} 0 & 1 \\ -1 & 0 \end{pmatrix}$.
+
+\section{Vortex tracking}
+
+\subsection{Computing $R$}
+The solution $R$ is harmonic 
+Harmonic Polynomials are used to solve the PDE. These are given as $h_1 = 1$,
+$h_{2m} = \Re (x+ i y)^m$
+and $h_{2m + 1} =  \Im (x+ iy)^m$ for $(x,y) \in \mathbb R^2$.
+
+$R$ can be solved numerically like this:
+\begin{enumerate}
+\item Choose a maximum degree $n$ and fix it.
+Compute $(\mathbb{P}_n g)(\exp (i\theta)) = \sum^n_{k=-n} \hat g (k \exp (i k \theta))$
+with $\hat g (k) = \frac{1}{2\pi} \int^{2\pi}_0 g(\exp (i\theta)) \exp (- i k \theta) \dd \theta$
+\item Compute the Fourier coefficients of the Dirichlet boundary condition up to order $n$ for instance using a FFT
+\item Compute the approximate solution $R_n$ as the harmonic expansion of $\mathbb{P}_n g_a$
 \begin{align}
-  j(u^*) = - \nabla \times G, \quad G(x) = \sum_j d_j \log |x-a_j| + R(x; a,d) 
+    R_n (r \exp (i \theta)) = \sum^n_{k=-n} r^{|k|} \hat g_a (k) \exp (i k \theta)
 \end{align}
-This equation is important to compute the gradient of $W$. 
-$u^*$ has singularities at the vortex locations $a_j$. This is the reason we need to smooth it out before using it as an initial condition for the PDE.
+\end{enumerate}
 
-The renormalized energy:
-Why do we need it?
-The Ginzburg-Landau energy diverges as $\varepsilon \to 0$. This divergence comes purely from the self-energy of each vortex core and carries no information about vortex interactions.
-The renormalized energy is what remains after subtracting the divergence:
+\subsection{Method}
+
+\textbf{Step 1: Constructing well-prepared initial conditions}
+Define initial vortex positions and degrees. Set up the initial phase $H$ such that the Neumann boundary condition is satisfied.
+Compute the radial function $f_\varepsilon$.
+\\
+\textbf{Step 2: evolve vortex positions via Hamiltonian ODE}
+solve the ODE using RK4 and compute $R$.
+\\
+\textbf{Step 3: Smoothing}
+At time $t>0$ build back an approximation of the wave function from the vortex positions $a(t)$ as
 \begin{align}
-  W(a,d) =  - \pi \sum_{1 \leq i \neq j \leq N} d_i d_j \log |a_i - a_j| - \pi \sum_j d_j R(a_j ; a, d)
+    u^* (x; a(t), d) = \exp (i H(x)) \prod^N_{j=1} (\frac{x-a_j}{|x-a_j|})^{d_j}
 \end{align}
-The first terms captures vortex-vortex interaction: same sign vortices repel, oppositve sign attract
-The second sum captures vortex-boundary interaction through R, the harmonic correction that enforces the Neumann boundary condition
+Smoothing is then applied to get the approximation of the wave function at time $t$ as:
+\begin{align}
+    \psieps^* (x; a^0, d) = u^* (x; a^0, d) \prod^N_{j=1} f_\varepsilon (|x- a^0_j|), \quad x \in \overline \Omega
+\end{align}
 
-\begin{definition}
-  A familiy of iniital conditions $(\psieps^0)_{\varepsilon>0}$ is siad to be well-prepared if it satisfies the following assumptions,
-  for some constant $C>=; 0<\alpha<1$ and $\varepsilon$ small enough:
-  \begin{enumerate}
-    \item There exists $N$ vortices with positions
-    $a^0 = (a^0_j)_{j=1, \ldots , N} \in \Omega^{*N}$
-    and degrees $d= (d_j)_{j=1, \ldots, N} \in \{\pm 1\}^N$
-    such that
-    \begin{align}
-      ||J\psieps^0 - \pi \sum^N_{j=1} d_j \delta_{a_j^0}|| \leq C \varepsilon^\alpha 
-    \end{align}
-    and the vortices are distant enough
-    \item the energy of $\psieps^0$ is close to be optimal:
-    \begin{align}
-      E_\varepsilon (\psieps^0) \leq W_\varepsilon (a_0, d) + C \varepsilon^{1/2}
-    \end{align}
-  \end{enumerate}
-\end{definition}
-
-
-\section{Method}
-\subsection{Motivation}
-Why not just solve the PDE directly?
-\begin{itemize}
-  \item The standard approach: time-splittinng + Fourier /FEM in space
-  \item The core problem: resolving the vortex of size $\varepsilon$ requires mesh size $h<\varepsilon$
-  \item Adaptive FEM helps, but still expensive, the method in this paper shifts the bottleneck entirely
-\end{itemize}
-
-
-\subsection{Algorithm}
-
-Step 1: Solve $1D$ ODE for $f_\varepsilon$ compute initial phase $H$ \\
-Step 2: Evolve vortex positions via Hamiltonian ODE (RK4, $\delta t = 10^{-3}$) \\
-Step 3: The radial prodfile $f_\varepsilon$ solved once, scales with $r_0/\varepsilon$ \\
-
-Key insight: $\epsilon$ only enters through the 1D preprocessing - it is no longer a discretization bottleneck
-
-
-\section{Error Analysis}
+Key insight: $\epsilon$ only enters through the 1D preprocessing.
+It is no longer a discretization bottleneck.
 
 \begin{lemma}
   Let $\Omega \subset \R^2$ be the unit disk, let $\{a(t)\}_{t\geq 0}$ denote the exact solution to the Hamiltonian mechanics.
@@ -215,37 +160,7 @@ Key insight: $\epsilon$ only enters through the 1D preprocessing - it is no long
   \end{align}
 \end{lemma}
 
-In order to prove this we need 2 other lemmas 
-
-\begin{lemma}
-  Let $b^0, a^0 \in \Omega^{*N}$, for fixed $d \in \{\pm1\}^N$
-  and let $\rho(a) := \min_{j\neq l} \{\text{dist}(a_j, \partial\Omega) , |a_j - a_l|\}$.
-  Suppose that $\rho_T:= \text{inf}_{t\in [0,T]} \leq 0$
-  \begin{align}
-  |a(t) - b(t)| \leq  C (|a^0-b^0| + \frac{\text{sup}_{s\in [0,T]}||\mathbb{P}^\perp_n g_{a(s)}||_{L^2(\partial \Omega)}}{\rho^{3/2}_T})\exp{C t /\rho^{5/2}_T}
-  \end{align}
-  Where $g_a(x) = - \sum^N_j d_j \log |x-a_j|$
-\end{lemma} 
-
-The time integration errors follows from the previous bounds and standard considerations on the numerical integration of ODEs
-
-\begin{lemma}
-  Let $b$ be the exact solution to $\dot{b} = F^n (b)$ and let $(b^k_{\delta t})_{k \delta t \leq T}$ be its numerical approximation with RK4 method and time step $\delta t$
-  \begin{align}
-    b^0_{\delta t} = b^0\\
-    b^0_{\delta t} = b^{k-1}_{\delta t} + \delta t \Phi_{\delta t , n} (b^{k-1}_{\delta t})
-  \end{align}
-Where $\Phi_{\delta t, n}$ is the RK4 increment function associated with the approximate forcing term $F^n$.
-Assume that:
-\begin{align}
-  0 < \rho_T = \min (\inf_{0 \leq t \ leq T} \rho(b(t)), \min_{k \delta t \leq T} \rho (b^k_{\delta t}))
-\end{align}
-Then there exists constants $C_{\rho_T}>0$ and $\Lambda_{\rho_T}$, that depends on $\rho_T$ but not on $n, b$ or $\delta t$ such that
-the following in time error holds:
-\begin{align}
-  \max_{k \delta t < T} |b(k \delta t) - b^k_{delta_t}| \leq \delta t^4 \frac{C_{\rho_T}}{\Lambda_{\rho_T}} (\exp (\Lambda_{\rho_T} T)- 1)
-\end{align}
-\end{lemma}
-
-\newpage
+\nocite{*}
 \printbibliography
+
+\end{document}
